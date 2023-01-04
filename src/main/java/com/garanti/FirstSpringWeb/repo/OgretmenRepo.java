@@ -1,23 +1,31 @@
 package com.garanti.FirstSpringWeb.repo;
 
+
 import com.garanti.FirstSpringWeb.Constants;
 import com.garanti.FirstSpringWeb.model.Ogretmen;
 import lombok.AllArgsConstructor;
 import org.springframework.dao.DataAccessException;
-import org.springframework.jdbc.core.*;
+import org.springframework.jdbc.core.BeanPropertyRowMapper;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.ResultSetExtractor;
+import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
+import org.springframework.web.context.annotation.ApplicationScope;
 
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Repository
 @AllArgsConstructor
 public class OgretmenRepo
 {
+    // olası hatalar
+    // CannotGetJdbcConnectionException
+    // BadSqlGrammarException
+    // InvalidDataAccessApiUsageException
+    // DataIntegrityViolationException
+
     private JdbcTemplate jdbcTemplate;
 
     private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
@@ -29,6 +37,7 @@ public class OgretmenRepo
         List<Map<String, Object>> res = this.jdbcTemplate.queryForList("select * from BILGE.OGRETMEN");
         System.err.println(res.toString());
     }*/
+
 
     public List<Ogretmen> getAll()
     {
@@ -52,27 +61,28 @@ public class OgretmenRepo
         Ogretmen ogretmen = null;
         String sql = "select * from BILGE.OGRETMEN where ID = :ABUZIDDIN";
         Map<String, Object> paramMap = new HashMap<>();
-        paramMap.put("ABUZIDDIN", id);
+        //paramMap.put("ABUZIDDIN", id);
         ogretmen = namedParameterJdbcTemplate.queryForObject(sql, paramMap, BeanPropertyRowMapper.newInstance(Ogretmen.class));
         // ---------------------------------
         /*ResultSetExtractor<Ogretmen> rse = new ResultSetExtractor<Ogretmen>()
         {
-            @Override
-            public Ogretmen extractData(ResultSet result) throws SQLException, DataAccessException
-            {
-                return new Ogretmen(result.getInt("ID"), result.getString("NAME"), result.getBoolean("IS_GICIK"));
-            }
+        @Override
+        public Ogretmen extractData(ResultSet result) throws SQLException, DataAccessException
+        {
+            return new Ogretmen(result.getInt("ID"), result.getString("NAME"), result.getBoolean("IS_GICIK"));
+        }
         };
         namedParameterJdbcTemplate.query(sql, paramMap, rse);*/
         // ---------------------------------
         // Incorrect column count: expected 1, actual 3
         // namedParameterJdbcTemplate.queryForObject(sql, paramMap, Ogretmen.class);
         return ogretmen;
+
     }
 
     public boolean deleteById( int id)
     {
-        // spring boot 'da başka bişey yapbiliriz int döndürüp
+
         String sql = "delete from BILGE.OGRETMEN where ID = :ID";
         Map<String, Object> paramMap = new HashMap<>();
         paramMap.put("ID", id);
@@ -95,4 +105,5 @@ public class OgretmenRepo
         paramMap.put("NAME", "%" + name + "%");
         return namedParameterJdbcTemplate.query(sql, paramMap, BeanPropertyRowMapper.newInstance(Ogretmen.class));
     }
+
 }

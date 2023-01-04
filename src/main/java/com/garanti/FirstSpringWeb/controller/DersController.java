@@ -1,90 +1,116 @@
 package com.garanti.FirstSpringWeb.controller;
 
 import com.garanti.FirstSpringWeb.model.Ders;
+import com.garanti.FirstSpringWeb.model.Konu;
+import com.garanti.FirstSpringWeb.model.Ogretmen;
 import com.garanti.FirstSpringWeb.repo.DersRepo;
-import lombok.AllArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.InvalidDataAccessApiUsageException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.jdbc.BadSqlGrammarException;
+import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @RestController
-@RequestMapping("dersler")
-@AllArgsConstructor
-public class DersController {
+@RequestMapping(path = "ders")
+public class DersController
+{
+    private DersRepo repo;
 
-    private DersRepo dersRepo;
+    public DersController(DersRepo repo){
+        this.repo = repo;
+    }
 
-    @GetMapping(value = "getall",produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<?> getAll(){
-        List<Ders> res = dersRepo.getAll();
-        if(res == null || res.size() == 0){
+    @GetMapping(path = "getAll",produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<Ders>> getAll(){
+        // localhost:9090/FirstSpringWeb/ders/getAll
+        List<Ders> res = repo.getAll();
+        if (res == null || res.size() == 0) {
             return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
-        }
-        else{
+        } else {
             return ResponseEntity.ok(res);
         }
     }
-    @GetMapping(value = "getByIdHeader",produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<?> getByIdHeader(@RequestHeader("id") int id){
+    @GetMapping(path = "getByIdHeader", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Ders> getByIdHeader(@RequestHeader(name = "id") Integer id) {
+        // localhost:9090/FirstSpringWeb/ders/getById?id=1
+        Ders res = repo.getById(id);
+        if (res != null) {
+            return ResponseEntity.ok(res);
+        } else {
+            return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+        }
+    }
 
-        Ders res = dersRepo.getById(id);
-        if (res != null){
+    @GetMapping(path = "getById", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Ders> getByIdQueryParam(@RequestParam(value = "id", required = true) Integer id) {
+        // localhost:9090/FirstSpringWeb/ders/getById?id=1
+        Ders res = repo.getById(id);
+        if (res != null) {
             return ResponseEntity.ok(res);
-        }
-        else {
+        } else {
             return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
         }
     }
-    @GetMapping(value = "getById",produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<?> getByIdQueryParam(@RequestParam("id") int id){
-        Ders res = dersRepo.getById(id);
-        if (res != null){
+
+    @GetMapping(path = "getById/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Ders> getByIdPathParam(@PathVariable(value = "id") Integer id) {
+        // localhost:9090/FirstSpringWeb/ders/getById/1
+        Ders res = repo.getById(id);
+        if (res != null) {
             return ResponseEntity.ok(res);
-        }
-        else {
+        } else {
             return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
         }
     }
-    @GetMapping(value = "getById/{id}",produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<?> getByIdPathParam(@PathVariable("id") int id){
-        Ders res = dersRepo.getById(id);
-        if (res != null){
-            return ResponseEntity.ok(res);
-        }
-        else{
-            return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
-        }
-    }
-    @PostMapping(value = "save",produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<?> save(@RequestBody Ders ders){
-        if(dersRepo.save(ders)){
+
+    @PostMapping(path = "save", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<String> save(@RequestBody Ders ders)
+    {
+        // localhost:9090/FirstSpringWeb/ders/save
+        boolean res = false;
+//        try
+//        {
+          res = repo.save(ders);
+//        }
+//        catch (CannotGetJdbcConnectionException e)
+//        {
+//            // mesaj önemli
+//            System.err.println(e.getMessage());
+//        }
+        if (res)
+        {
             return ResponseEntity.status(HttpStatus.CREATED).body("Başarı ile kaydedildi");
         }
-        else {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Kaydedilemedi");
+        else
+        {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Başarı ile kaydedilemedi");
         }
     }
-    @DeleteMapping(value = "deleteById/{id}")
-    public ResponseEntity<?> deleteById(@PathVariable("id") int id){
-        if (dersRepo.deleteById(id)){
-            return ResponseEntity.ok("Başarı ile silindi");
-        }
-        else {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Silinemedi");
-        }
-    }
-    @DeleteMapping(value = "deleteByIdHeader")
-    public ResponseEntity<?> deleteByIdHeader(@RequestHeader("id") int id){
-        if (dersRepo.deleteById(id)){
-            return ResponseEntity.ok("Başarı ile silindi");
-        }
-        else {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Silinemedi");
-        }
-    }
-}
 
+    @DeleteMapping(path = "deleteById/{id}")
+    public ResponseEntity<String> deleteById(@PathVariable(value = "id") Integer id) {
+        // localhost:9090/FirstSpringWeb/ders/deleteById/1
+        if (repo.deleteById(id)) {
+            return ResponseEntity.ok("Başarı ile silindi");
+        } else {
+            return ResponseEntity.internalServerError().body("Başarı ile silinemedi");
+        }
+    }
+
+    @DeleteMapping(path = "deleteByIdHeader")
+    public ResponseEntity<String> deleteByIdHeader(@RequestHeader(value = "id") Integer id) {
+        // localhost:9090/FirstSpringWeb/ders/deleteById/1
+        if (repo.deleteById(id)) {
+            return ResponseEntity.ok("Başarı ile silindi");
+        } else {
+            return ResponseEntity.internalServerError().body("Başarı ile silinemedi");
+        }
+    }
+
+}

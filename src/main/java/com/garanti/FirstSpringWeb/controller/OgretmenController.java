@@ -1,19 +1,65 @@
 package com.garanti.FirstSpringWeb.controller;
 
 import com.garanti.FirstSpringWeb.model.Ogretmen;
+import com.garanti.FirstSpringWeb.model.Person;
+import com.garanti.FirstSpringWeb.repo.DersRepo;
 import com.garanti.FirstSpringWeb.repo.OgretmenRepo;
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
+import org.springframework.dao.InvalidDataAccessApiUsageException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.jdbc.BadSqlGrammarException;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 @RestController
-@RequestMapping(path = "ogretmenler")
-// localhost:9090/FirstSpringWeb/ogretmen
+@RequestMapping(path = "ogretmen")
+// sadeve OgretmenRepo classının hatalarını yakalamak için
+// @RestControllerAdvice(basePackageClasses = OgretmenRepo.class)
 public class OgretmenController
 {
+    // localhost:9090/FirstSpringWeb/ogretmen
+
+    @ExceptionHandler(value = BadSqlGrammarException.class)
+    public void badSqlGrammerExceptionHandler(BadSqlGrammarException e)
+    {
+        // server.error.include-message = always
+        System.err.println(e.getMessage());
+    }
+
+    @ExceptionHandler(value = InvalidDataAccessApiUsageException.class)
+    //@ResponseBody
+    //@ResponseStatus(code = HttpStatus.IM_USED, reason = "invalid jdbc usage")
+
+    public ResponseEntity<String> InvalidDataAccessApiUsageExceptionHandler(InvalidDataAccessApiUsageException e)
+    {
+        System.err.println(e.getMessage());
+        // isterseniz responseentity döndürebilirsiniz
+        return ResponseEntity.status(HttpStatus.IM_USED).body("yazılımcı kodu yanlış yazmış");
+        // veya aşağıdaki gibi döndürülebilir
+        // return "yazılımcı kodu yanlış yazmış";
+    }
+
+   /* public OgretmenController(){
+        //new Person(1,"fg").toString(); lombok ile oluşturduk
+        System.err.println("----------------> new yapılıyor");
+    }
+
+    @GetMapping(path = "hello")
+    public String helloSpring()
+    {
+        // new OgretmenRepo().helloSpring();
+        // localhost:9090/FirstSpringWeb/ogretmen/hello
+        return "Hello Spring";
+    }*/
+
     // bean olarak ayağa kaldırılmazsa ise bir anlamı yok
     //@Autowired
     private OgretmenRepo repo;
@@ -26,115 +72,86 @@ public class OgretmenController
     }
 
     @GetMapping(path = "getall", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<List<Ogretmen>> getAll()
-    {
+    public ResponseEntity<List<Ogretmen>> getAll() {
         // localhost:9090/FirstSpringWeb/ogretmen/getAll
         List<Ogretmen> res = repo.getAll();
-        if (res == null || res.size() == 0)
-        {
+        if (res == null || res.size() == 0) {
             return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
-        }
-        else
-        {
+        } else {
             return ResponseEntity.ok(res);
         }
     }
 
     @GetMapping(path = "findAllByName", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<List<Ogretmen>> getByIdQueryParam(@RequestParam(value = "name", required = true) String name)
-    {
+    public ResponseEntity<List<Ogretmen>> getByIdQueryParam(@RequestParam(value = "name", required = true) String name) {
         // localhost:9090/FirstSpringWeb/ogretmen/findAllByName?name=a
         return ResponseEntity.ok(this.repo.getAllLike(name));
     }
 
     @GetMapping(path = "getByIdHeader", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Ogretmen> getByIdHeader(@RequestHeader(name = "id") Integer id)
-    {
+    public ResponseEntity<Ogretmen> getByIdHeader(@RequestHeader(name = "id") Integer id) {
         // localhost:9090/FirstSpringWeb/ogretmen/getById?id=1
         Ogretmen res = repo.getById(id);
-        if (res != null)
-        {
+        if (res != null) {
             return ResponseEntity.ok(res);
-        }
-        else
-        {
+        } else {
             return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
         }
     }
 
     @GetMapping(path = "getById", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Ogretmen> getByIdQueryParam(@RequestParam(value = "id", required = true) Integer id)
-    {
+    public ResponseEntity<Ogretmen> getByIdQueryParam(@RequestParam(value = "id", required = true) Integer id) {
         // localhost:9090/FirstSpringWeb/ogretmen/getById?id=1
         Ogretmen res = repo.getById(id);
-        if (res != null)
-        {
+        if (res != null) {
             return ResponseEntity.ok(res);
-        }
-        else
-        {
+        } else {
             return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
         }
     }
 
     @GetMapping(path = "getById/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Ogretmen> getByIdPathParam(@PathVariable(value = "id") Integer id)
-    {
+    public ResponseEntity<Ogretmen> getByIdPathParam(@PathVariable(value = "id") Integer id) {
         // localhost:9090/FirstSpringWeb/ogretmen/getById/1
-        //bütün parametreleri vermek zorundayız
-        //consume restful servisin dışardan alacağı data türünü belirtir
-        //produce web servisin dışarıya vereceği türü belirtir
         Ogretmen res = repo.getById(id);
         if (res != null)
         {
             return ResponseEntity.ok(res);
-        }
-        else
-        {
+        } else {
             return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
         }
     }
 
     @PostMapping(path = "save", consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<String> save(@RequestBody Ogretmen ogretmen)
-    {
+    public ResponseEntity<String> save(@RequestBody Ogretmen ogretmen) {
         // localhost:9090/FirstSpringWeb/ogretmen/save
         // {"name":"RestTest", "is_GICIK": true}
-        if (repo.save(ogretmen))
-        {
+        if (repo.save(ogretmen)) {
             return ResponseEntity.status(HttpStatus.CREATED).body("Başarı ile kaydedildi");
-        }
-        else
-        {
+        } else {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Başarı ile kaydedildi");
         }
     }
 
     @DeleteMapping(path = "deleteById/{id}")
-    public ResponseEntity<String> deleteById(@PathVariable(value = "id") Integer id)
-    {
+    public ResponseEntity<String> deleteById(@PathVariable(value = "id") Integer id) {
         // localhost:9090/FirstSpringWeb/ogretmen/deleteById/1
-        if (repo.deleteById(id))
-        {
+        if (repo.deleteById(id)) {
             return ResponseEntity.ok("Başarı ile silindi");
-        }
-        else
-        {
+        } else {
             return ResponseEntity.internalServerError().body("Başarı ile silinemedi");
         }
     }
 
     @DeleteMapping(path = "deleteByIdHeader")
-    public ResponseEntity<String> deleteByIdHeader(@RequestHeader(value = "id") Integer id)
-    {
+    public ResponseEntity<String> deleteByIdHeader(@RequestHeader(value = "id") Integer id) {
         // localhost:9090/FirstSpringWeb/ogretmen/deleteById/1
-        if (repo.deleteById(id))
-        {
+        if (repo.deleteById(id)) {
             return ResponseEntity.ok("Başarı ile silindi");
-        }
-        else
-        {
+        } else {
             return ResponseEntity.internalServerError().body("Başarı ile silinemedi");
         }
     }
+
+
 }
